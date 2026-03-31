@@ -59,7 +59,8 @@ func (c *Client) SendChatRequest(prompt string) (string, error) {
 	}
 
 	var completionResp ChatCompletionResponse
-	if err := json.Unmarshal(body, &completionResp); err != nil {
+	err = json.Unmarshal(body, &completionResp)
+	if err != nil {
 		return "", err
 	}
 
