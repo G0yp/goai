@@ -9,26 +9,24 @@ import (
 	"time"
 )
 
-type Client struct {
-	BaseURL    string
-	Model      string
-	HTTPClient *http.Client
-}
-
-func NewClient(baseURL string, model string) *Client {
+func NewClient(baseURL string, model string, systemPrompt string) *Client {
 	return &Client{
 		BaseURL:    baseURL,
 		Model:      model,
+		History:    []Message{{Role: "system", Content: systemPrompt}},
 		HTTPClient: &http.Client{Timeout: 60 * time.Second},
 	}
 }
 
 func (c *Client) SendChatRequest(prompt string) (string, error) {
+	const maxMessages = 20
+	if len(c.History) >= maxMessages {
+		c.History = append(c.History[:1], c.History[2:]...)
+	}
+
 	reqBody := ChatCompletionRequest{
-		Model: c.Model,
-		Messages: []Message{
-			{Role: "user", Content: prompt},
-		},
+		Model:    c.Model,
+		Messages: append(c.History, Message{Role: "user", Content: prompt}),
 	}
 
 	jsonData, err := json.Marshal(reqBody)
@@ -58,9 +56,8 @@ func (c *Client) SendChatRequest(prompt string) (string, error) {
 		return "", fmt.Errorf("API error (%d): %s", resp.StatusCode, string(body))
 	}
 
-	var completionResp ChatCompletionResponse
-	err = json.Unmarshal(body, &completionResp)
-	if err != nil {
+	completionResp := ChatCompletionResponse{}
+	if err := json.Unmarshal(body, &completionResp); err != nil {
 		return "", err
 	}
 
@@ -68,5 +65,11 @@ func (c *Client) SendChatRequest(prompt string) (string, error) {
 		return "", fmt.Errorf("no choices in response")
 	}
 
-	return completionResp.Choices[0].Message.Content, nil
+	c.History = append(c.History, Message{Role: "user", Content: prompt})
+
+	response := completionResp.Choices[0].Message.Content
+
+	c.History = append(c.History, Message{Role: "assistant", Content: response})
+
+	return response, nil
 }

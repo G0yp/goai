@@ -1,5 +1,7 @@
 package client
 
+import "net/http"
+
 type ChatCompletionRequest struct {
 	Model    string    `json:"model"`
 	Messages []Message `json:"messages"`
@@ -16,4 +18,11 @@ type ChatCompletionResponse struct {
 
 type Choice struct {
 	Message Message `json:"message"`
+}
+
+type Client struct {
+	BaseURL    string
+	Model      string
+	History    []Message
+	HTTPClient *http.Client
 }
