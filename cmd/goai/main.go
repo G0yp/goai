@@ -15,15 +15,24 @@ func main() {
 }
 
 func repl(apiClient *client.Client) {
+	const prompt = "Enter input: "
+
+	fmt.Println("Type /help for commands.")
+
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Print("Enter input (type exit to end process): ")
+	fmt.Print(prompt)
 
 	for scanner.Scan() {
 		text := scanner.Text()
 		text = strings.TrimSpace(text)
 
-		if text == "exit" {
-			return
+		if action, err := handleSlashCommands(text); action == true && err != nil {
+			fmt.Printf("Error: %v\n", err)
+			fmt.Print(prompt)
+			continue
+		} else if action == true {
+			fmt.Print(prompt)
+			continue
 		}
 
 		response, err := apiClient.SendChatRequest(text)
@@ -33,7 +42,7 @@ func repl(apiClient *client.Client) {
 			fmt.Printf("Response: %s\n", response)
 		}
 
-		fmt.Print("Enter input (type exit to end process): ")
+		fmt.Print(prompt)
 	}
 }
 
