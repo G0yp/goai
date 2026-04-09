@@ -64,6 +64,7 @@ func handleSlashCommands(input string, stream *bool) (bool, error) {
 			fmt.Println("Available commands:")
 			fmt.Println("/help - Show this help message")
 			fmt.Println("/exit - Exit the application")
+			fmt.Println("/stream - Toggle streaming mode")
 			return true, nil
 		case "exit":
 			os.Exit(0)
