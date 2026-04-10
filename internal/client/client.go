@@ -151,6 +151,9 @@ func (c *Client) SendChatRequestStream(prompt string) error {
 
 		fmt.Print(chunk.Choices[0].Message.Content)
 	}
+	if scanner.Err() != nil {
+		return scanner.Err()
+	}
 
 	c.History = append(c.History, Message{Role: "user", Content: prompt})
 	c.History = append(c.History, completionResp.Choices[0].Message)
