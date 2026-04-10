@@ -156,7 +156,11 @@ func (c *Client) SendChatRequestStream(prompt string) error {
 	}
 
 	c.History = append(c.History, Message{Role: "user", Content: prompt})
-	c.History = append(c.History, completionResp.Choices[0].Message)
+	if completionResp.Choices[0].Message.Role == "" {
+		completionResp.Choices[0].Message.Role = "assistant"
+	} else {
+		c.History = append(c.History, completionResp.Choices[0].Message)
+	}
 
 	return nil
 }
