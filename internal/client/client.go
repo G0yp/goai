@@ -139,7 +139,11 @@ func (c *Client) SendChatRequestStream(prompt string) error {
 			continue
 		}
 
-		if chunk.Choices[0].Message.Role != "" {
+		// explicit handling for when role and content come in either the same or seperate chunks
+		if chunk.Choices[0].Message.Role != "" && chunk.Choices[0].Message.Content != "" {
+			completionResp.Choices[0].Message.Role += chunk.Choices[0].Message.Role
+			completionResp.Choices[0].Message.Content += chunk.Choices[0].Message.Content
+		} else if chunk.Choices[0].Message.Role != "" {
 			completionResp.Choices[0].Message.Role += chunk.Choices[0].Message.Role
 		} else {
 			completionResp.Choices[0].Message.Content += chunk.Choices[0].Message.Content
