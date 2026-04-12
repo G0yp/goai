@@ -3,6 +3,7 @@ package client
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -16,7 +17,7 @@ func NewClient(baseURL string, model string, systemPrompt string) *Client {
 		BaseURL:    baseURL,
 		Model:      model,
 		History:    []Message{{Role: "system", Content: systemPrompt}},
-		HTTPClient: &http.Client{Timeout: 60 * time.Second},
+		HTTPClient: &http.Client{},
 	}
 }
 
@@ -37,7 +38,10 @@ func (c *Client) SendChatRequest(prompt string) (string, error) {
 		return "", err
 	}
 
-	req, err := http.NewRequest("POST", c.BaseURL+"/v1/chat/completions", bytes.NewBuffer(jsonData))
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "POST", c.BaseURL+"/v1/chat/completions", bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", err
 	}
@@ -94,7 +98,18 @@ func (c *Client) SendChatRequestStream(prompt string) error {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", c.BaseURL+"/v1/chat/completions", bytes.NewBuffer(jsonData))
+	// Creats a context with a timeout to prevent hanging if the server doesn't respond
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	idleTimeout := 30 * time.Second
+	idleTimer := time.AfterFunc(idleTimeout, func() {
+		cancel()
+	})
+
+	defer idleTimer.Stop()
+
+	req, err := http.NewRequestWithContext(ctx, "POST", c.BaseURL+"/v1/chat/completions", bytes.NewBuffer(jsonData))
 	if err != nil {
 		return err
 	}
@@ -116,6 +131,7 @@ func (c *Client) SendChatRequestStream(prompt string) error {
 	completionResp.Choices = []ChoiceStream{{}}
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
+		idleTimer.Reset(idleTimeout)
 		line := strings.TrimSpace(scanner.Text())
 		if line == "" {
 			continue
