@@ -138,7 +138,10 @@ func (c *Client) SendChatRequestStream(prompt string, out io.Writer) error {
 	var fullContent strings.Builder
 	var role string
 
+	const kilobyte = 1024
 	scanner := bufio.NewScanner(resp.Body)
+	buf := make([]byte, 0, 64*kilobyte) // 64 kilobytes
+	scanner.Buffer(buf, 1024*kilobyte)  // 1 megabyte
 	for scanner.Scan() {
 		idleTimer.Reset(idleTimeout)
 		line := strings.TrimSpace(scanner.Text())
