@@ -1,7 +1,5 @@
 package client
 
-import "net/http"
-
 // for general api requests
 type ChatCompletionRequest struct {
 	Model    string    `json:"model"`
@@ -9,10 +7,10 @@ type ChatCompletionRequest struct {
 	Stream   bool      `json:"stream"`
 }
 
-// for non streamed responses
+// for non-streamed responses
 type Message struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
+	Role    string `json:"role,omitempty"`
+	Content string `json:"content,omitempty"`
 }
 
 type Choice struct {
@@ -23,19 +21,12 @@ type ChatCompletionResponse struct {
 	Choices []Choice `json:"choices"`
 }
 
-// For streaming responses
+// for streaming responses
 
 type ChoiceStream struct {
-	Message Message `json:"delta"`
+	Delta Message `json:"delta"`
 }
 
 type ChatCompletionStreamResponse struct {
 	Choices []ChoiceStream `json:"choices"`
-}
-
-type Client struct {
-	BaseURL    string
-	Model      string
-	History    []Message
-	HTTPClient *http.Client
 }

@@ -12,6 +12,13 @@ import (
 	"time"
 )
 
+type Client struct {
+	BaseURL    string
+	Model      string
+	History    []Message
+	HTTPClient *http.Client
+}
+
 func NewClient(baseURL string, model string, systemPrompt string) *Client {
 	return &Client{
 		BaseURL:    baseURL,
@@ -127,8 +134,10 @@ func (c *Client) SendChatRequestStream(prompt string) error {
 		return fmt.Errorf("API error (%d): %s", resp.StatusCode, string(body))
 	}
 
-	completionResp := ChatCompletionStreamResponse{}
-	completionResp.Choices = []ChoiceStream{{}}
+	// builder lets me create a string without concationation during the stream
+	var fullContent strings.Builder
+	var role string
+
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
 		idleTimer.Reset(idleTimeout)
@@ -155,28 +164,23 @@ func (c *Client) SendChatRequestStream(prompt string) error {
 			continue
 		}
 
-		// explicit handling for when role and content come in either the same or seperate chunks
-		if chunk.Choices[0].Message.Role != "" && chunk.Choices[0].Message.Content != "" {
-			completionResp.Choices[0].Message.Role += chunk.Choices[0].Message.Role
-			completionResp.Choices[0].Message.Content += chunk.Choices[0].Message.Content
-		} else if chunk.Choices[0].Message.Role != "" {
-			completionResp.Choices[0].Message.Role += chunk.Choices[0].Message.Role
-		} else {
-			completionResp.Choices[0].Message.Content += chunk.Choices[0].Message.Content
+		if chunk.Choices[0].Delta.Role != "" {
+			role = chunk.Choices[0].Delta.Role
 		}
-
-		fmt.Print(chunk.Choices[0].Message.Content)
+		if chunk.Choices[0].Delta.Content != "" {
+			fullContent.WriteString(chunk.Choices[0].Delta.Content)
+			fmt.Print(chunk.Choices[0].Delta.Content)
+		}
 	}
 	if scanner.Err() != nil {
 		return scanner.Err()
 	}
 
 	c.History = append(c.History, Message{Role: "user", Content: prompt})
-	if completionResp.Choices[0].Message.Role == "" {
-		completionResp.Choices[0].Message.Role = "assistant"
-	} else {
-		c.History = append(c.History, completionResp.Choices[0].Message)
+	if role == "" {
+		role = "assistant"
 	}
+	c.History = append(c.History, Message{Role: role, Content: fullContent.String()})
 
 	return nil
 }
