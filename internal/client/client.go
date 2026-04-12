@@ -88,7 +88,7 @@ func (c *Client) SendChatRequest(prompt string) (string, error) {
 	return response, nil
 }
 
-func (c *Client) SendChatRequestStream(prompt string) error {
+func (c *Client) SendChatRequestStream(prompt string, out io.Writer) error {
 	const maxMessages = 20
 	if len(c.History) >= maxMessages {
 		c.History = append(c.History[:1], c.History[2:]...)
@@ -169,7 +169,7 @@ func (c *Client) SendChatRequestStream(prompt string) error {
 		}
 		if chunk.Choices[0].Delta.Content != "" {
 			fullContent.WriteString(chunk.Choices[0].Delta.Content)
-			fmt.Print(chunk.Choices[0].Delta.Content)
+			fmt.Fprint(out, chunk.Choices[0].Delta.Content)
 		}
 	}
 	if scanner.Err() != nil {

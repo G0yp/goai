@@ -38,7 +38,7 @@ func repl(apiClient *client.Client) {
 
 		if stream == true {
 			fmt.Print("Response: ")
-			err := apiClient.SendChatRequestStream(text)
+			err := apiClient.SendChatRequestStream(text, os.Stdout)
 			if err != nil {
 				fmt.Printf("Error: %v\n", err)
 			}
