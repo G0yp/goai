@@ -28,6 +28,13 @@ func NewClient(baseURL string, model string, systemPrompt string) *Client {
 	}
 }
 
+func (c *Client) ClearHistory() {
+	const maxMessages = 20
+	if len(c.History) > maxMessages {
+		c.History = append(c.History[:1], c.History[2:]...)
+	}
+}
+
 func (c *Client) SendChatRequest(prompt string) (string, error) {
 	const maxMessages = 20
 	if len(c.History) >= maxMessages {
