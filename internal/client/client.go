@@ -102,9 +102,10 @@ func (c *Client) SendChatRequestStream(prompt string, out io.Writer) error {
 	}
 
 	reqBody := ChatCompletionRequest{
-		Model:    c.Model,
-		Messages: append(c.History, Message{Role: "user", Content: prompt}),
-		Stream:   true,
+		Model:         c.Model,
+		Messages:      append(c.History, Message{Role: "user", Content: prompt}),
+		Stream:        true,
+		StreamOptions: map[string]bool{"include_usage": true},
 	}
 
 	jsonData, err := json.Marshal(reqBody)

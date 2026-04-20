@@ -2,9 +2,10 @@ package client
 
 // for general api requests
 type ChatCompletionRequest struct {
-	Model    string    `json:"model"`
-	Messages []Message `json:"messages"`
-	Stream   bool      `json:"stream"`
+	Model         string          `json:"model"`
+	Messages      []Message       `json:"messages"`
+	Stream        bool            `json:"stream"`
+	StreamOptions map[string]bool `json:"stream_options,omitempty"`
 }
 
 // for non-streamed responses
