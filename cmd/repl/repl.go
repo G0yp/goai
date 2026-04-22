@@ -22,7 +22,7 @@ func Repl(apiClient *client.Client) {
 		text := scanner.Text()
 		text = strings.TrimSpace(text)
 
-		if action, err := handleSlashCommands(text, &stream); action == true && err != nil {
+		if action, err := handleSlashCommands(text, &stream, apiClient); err != nil {
 			fmt.Printf("Error: %v\n", err)
 			fmt.Print(prompt)
 			continue
@@ -52,14 +52,18 @@ func Repl(apiClient *client.Client) {
 	}
 }
 
-func handleSlashCommands(input string, stream *bool) (bool, error) {
+func handleSlashCommands(input string, stream *bool, c *client.Client) (bool, error) {
 	if command, found := strings.CutPrefix(input, "/"); found {
-		switch command {
+		command := strings.Fields(command)
+		switch command[0] {
 		case "help":
 			fmt.Println("Available commands:")
 			fmt.Println("/help - Show this help message")
 			fmt.Println("/exit - Exit the application")
 			fmt.Println("/stream - Toggle streaming mode")
+			fmt.Println("/tokens - Shows current token usage")
+			fmt.Println("/system - Sets a new system prompt")
+
 			return true, nil
 		case "exit":
 			os.Exit(0)
@@ -67,6 +71,13 @@ func handleSlashCommands(input string, stream *bool) (bool, error) {
 		case "stream":
 			*stream = !*stream
 			fmt.Printf("Streaming mode: %v\n", *stream)
+			return true, nil
+		case "tokens":
+			fmt.Printf("Current token usage: %v\n", c.History.TotalTokens)
+			return true, nil
+		case "system":
+			c.History.Messages[0].Content = strings.Join(command[1:], " ")
+			fmt.Println("Set new system prompt")
 			return true, nil
 
 		default:

@@ -15,7 +15,7 @@ import (
 type Client struct {
 	BaseURL    string
 	Model      string
-	History    []Message
+	History    ClientHistory
 	HTTPClient *http.Client
 }
 
@@ -23,27 +23,25 @@ func NewClient(baseURL string, model string, systemPrompt string) *Client {
 	return &Client{
 		BaseURL:    baseURL,
 		Model:      model,
-		History:    []Message{{Role: "system", Content: systemPrompt}},
+		History:    ClientHistory{Messages: []Message{{Role: "system", Content: systemPrompt}}, TotalTokens: 0},
 		HTTPClient: &http.Client{},
 	}
 }
 
-func (c *Client) ClearHistory() {
-	const maxMessages = 20
-	if len(c.History) > maxMessages {
-		c.History = append(c.History[:1], c.History[2:]...)
+func (c *Client) TrimHistory() {
+	const maxTokens = 4000
+	for c.History.TotalTokens > maxTokens && len(c.History.Messages) > 1 {
+		c.History.TotalTokens -= c.History.Messages[1].Tokens
+		c.History.Messages = append(c.History.Messages[:1], c.History.Messages[2:]...)
 	}
 }
 
 func (c *Client) SendChatRequest(prompt string) (string, error) {
-	const maxMessages = 20
-	if len(c.History) >= maxMessages {
-		c.History = append(c.History[:1], c.History[2:]...)
-	}
+	c.TrimHistory()
 
 	reqBody := ChatCompletionRequest{
 		Model:    c.Model,
-		Messages: append(c.History, Message{Role: "user", Content: prompt}),
+		Messages: append(c.History.Messages, Message{Role: "user", Content: prompt}),
 		Stream:   false,
 	}
 
@@ -86,26 +84,27 @@ func (c *Client) SendChatRequest(prompt string) (string, error) {
 		return "", fmt.Errorf("no choices in response")
 	}
 
-	c.History = append(c.History, Message{Role: "user", Content: prompt})
-
+	tokens := completionResp.Usage
 	response := completionResp.Choices[0].Message.Content
 
-	c.History = append(c.History, Message{Role: "assistant", Content: response})
+	promptMessage := Message{Role: "user", Content: prompt, Tokens: tokens.PromptTokens}
+	responseMessage := Message{Role: "assistant", Content: response, Tokens: tokens.CompletionTokens}
+
+	c.History.Messages = append(c.History.Messages, promptMessage)
+	c.History.Messages = append(c.History.Messages, responseMessage)
+	c.History.TotalTokens += tokens.TotalTokens
 
 	return response, nil
 }
 
 func (c *Client) SendChatRequestStream(prompt string, out io.Writer) error {
-	const maxMessages = 20
-	if len(c.History) >= maxMessages {
-		c.History = append(c.History[:1], c.History[2:]...)
-	}
+	c.TrimHistory()
 
 	reqBody := ChatCompletionRequest{
 		Model:         c.Model,
-		Messages:      append(c.History, Message{Role: "user", Content: prompt}),
+		Messages:      append(c.History.Messages, Message{Role: "user", Content: prompt}),
 		Stream:        true,
-		StreamOptions: map[string]bool{"include_usage": true},
+		StreamOptions: &StreamOptions{IncludeUsage: true},
 	}
 
 	jsonData, err := json.Marshal(reqBody)
@@ -187,11 +186,11 @@ func (c *Client) SendChatRequestStream(prompt string, out io.Writer) error {
 		return scanner.Err()
 	}
 
-	c.History = append(c.History, Message{Role: "user", Content: prompt})
+	c.History.Messages = append(c.History.Messages, Message{Role: "user", Content: prompt})
 	if role == "" {
 		role = "assistant"
 	}
-	c.History = append(c.History, Message{Role: role, Content: fullContent.String()})
+	c.History.Messages = append(c.History.Messages, Message{Role: role, Content: fullContent.String()})
 
 	return nil
 }
