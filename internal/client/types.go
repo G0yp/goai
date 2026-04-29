@@ -8,6 +8,16 @@ type ChatCompletionRequest struct {
 	StreamOptions *StreamOptions `json:"stream_options,omitempty"`
 }
 
+// for tekenizing string
+type TokenizeRequest struct {
+	Content    string `json:"content"`
+	WithPieces bool   `json:"with_pieces"`
+}
+
+type tokenizeResponse struct {
+	Tokens []int `json:"tokens"`
+}
+
 type StreamOptions struct {
 	IncludeUsage bool `json:"include_usage"`
 }
@@ -47,4 +57,5 @@ type ChoiceStream struct {
 
 type ChatCompletionStreamResponse struct {
 	Choices []ChoiceStream `json:"choices"`
+	Usage   Usage          `json:"usage"`
 }

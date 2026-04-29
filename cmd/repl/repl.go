@@ -76,7 +76,10 @@ func handleSlashCommands(input string, stream *bool, c *client.Client) (bool, er
 			fmt.Printf("Current token usage: %v\n", c.History.TotalTokens)
 			return true, nil
 		case "system":
-			c.History.Messages[0].Content = strings.Join(command[1:], " ")
+			err := c.UpdateSystemPrompt(strings.Join(command[1:], " "))
+			if err != nil {
+				return true, err
+			}
 			fmt.Println("Set new system prompt")
 			return true, nil
 
