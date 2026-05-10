@@ -2,15 +2,51 @@ package client
 
 // for general api requests
 type ChatCompletionRequest struct {
-	Model    string    `json:"model"`
-	Messages []Message `json:"messages"`
-	Stream   bool      `json:"stream"`
+	Model         string         `json:"model"`
+	Messages      []Message      `json:"messages"`
+	Stream        bool           `json:"stream"`
+	StreamOptions *StreamOptions `json:"stream_options,omitempty"`
+}
+
+// for tekenizing string
+type TokenizeRequest struct {
+	Content    string `json:"content"`
+	WithPieces bool   `json:"with_pieces"`
+}
+
+type tokenizeResponse struct {
+	Tokens []int `json:"tokens"`
+}
+
+type StreamOptions struct {
+	IncludeUsage bool `json:"include_usage"`
+}
+
+type Models struct {
+	Data []ModelData `json:"data"`
+}
+
+type ModelData struct {
+	Id  string `json:"id"`
+	CTX int    `json:"meta.n_ctx"`
+}
+
+type Usage struct {
+	PromptTokens     int `json:"prompt_tokens"`
+	CompletionTokens int `json:"completion_tokens"`
+	TotalTokens      int `json:"total_tokens"`
+}
+
+type ClientHistory struct {
+	Messages    []Message
+	TotalTokens int
 }
 
 // for non-streamed responses
 type Message struct {
 	Role    string `json:"role,omitempty"`
 	Content string `json:"content,omitempty"`
+	Tokens  int    `json:"-"`
 }
 
 type Choice struct {
@@ -19,6 +55,7 @@ type Choice struct {
 
 type ChatCompletionResponse struct {
 	Choices []Choice `json:"choices"`
+	Usage   Usage    `json:"usage"`
 }
 
 // for streaming responses
@@ -29,4 +66,5 @@ type ChoiceStream struct {
 
 type ChatCompletionStreamResponse struct {
 	Choices []ChoiceStream `json:"choices"`
+	Usage   Usage          `json:"usage"`
 }
