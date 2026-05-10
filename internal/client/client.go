@@ -27,6 +27,19 @@ func NewClient(baseURL string, model string, systemPrompt string) (*Client, erro
 		HTTPClient: &http.Client{},
 	}
 
+	// handles blank model entry - probably better way to do this instead of the for loop
+	if model == "" {
+		models, err := client.GetAvailableModels()
+		if err != nil {
+			return nil, err
+		}
+		for model, ctx := range models {
+			client.Model = model
+			client.MaxContext = ctx
+			break
+		}
+	}
+
 	tokens, err := client.tokenize(systemPrompt)
 	if err != nil {
 		return nil, err
@@ -158,6 +171,10 @@ func (c *Client) SwitchModels(model string, ctx int) error {
 
 	c.Model = model
 	c.MaxContext = ctx
+	return nil
+}
+
+func (c *Client) ClearHistory() error {
 	return nil
 }
 
