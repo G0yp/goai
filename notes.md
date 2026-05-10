@@ -3,9 +3,12 @@
 - user config (json)
 - bubbletea ui
 - dynamically fetch max context length from the server
-- support for /v1/models
+- support for /models - started, need to finish now, this will help with context management
 - Keep repl for testing, bubble tea for actual use
 - extensions?
+
+# issues
+- when running llama-server in router mode, the tokenize system prompt in NewClient crashes the program
 
 # ListModels Implementation
 
