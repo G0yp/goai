@@ -52,6 +52,7 @@ func (c *Client) tokenize(message string) (int, error) {
 	reqBody := TokenizeRequest{
 		Content:    message,
 		WithPieces: false,
+		Model:      c.Model,
 	}
 	jsonData, err := json.Marshal(reqBody)
 	if err != nil {

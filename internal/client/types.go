@@ -17,6 +17,7 @@ type Message struct {
 type TokenizeRequest struct {
 	Content    string `json:"content"`
 	WithPieces bool   `json:"with_pieces"`
+	Model      string `json:"model"`
 }
 
 type tokenizeResponse struct {
