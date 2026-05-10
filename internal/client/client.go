@@ -110,11 +110,40 @@ func (c *Client) UpdateSystemPrompt(systemPrompt string) error {
 	return nil
 }
 
-func (c *Client) GetAvailableModels() ([]string, error) {
+func (c *Client) GetAvailableModels() (Models, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", c.BaseURL+"/models", nil)
+	if err != nil {
+		return Models{}, nil
+	}
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return Models{}, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return Models{}, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return Models{}, fmt.Errorf("API error (%d): %s", resp.StatusCode, body)
+	}
+
+	modelsResp := Models{}
+	if err := json.Unmarshal(body, &modelsResp); err != nil {
+		return Models{}, err
+	}
+
+	return modelsResp, nil
+
 	// /models endpoint to list all available models
 	// This will just return a list of strings with each model slug
 	// then make another function that changes the model
-	return nil, nil
 }
 
 func (c *Client) getContextLength() (int, error) {

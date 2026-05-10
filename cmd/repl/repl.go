@@ -10,6 +10,7 @@ import (
 )
 
 func Repl(apiClient *client.Client) {
+	fmt.Print(apiClient.GetAvailableModels())
 	const prompt = "Enter input: "
 	var stream bool = true
 

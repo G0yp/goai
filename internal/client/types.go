@@ -22,6 +22,15 @@ type StreamOptions struct {
 	IncludeUsage bool `json:"include_usage"`
 }
 
+type Models struct {
+	Data []ModelData `json:"data"`
+}
+
+type ModelData struct {
+	Id  string `json:"id"`
+	CTX int    `json:"meta.n_ctx"`
+}
+
 type Usage struct {
 	PromptTokens     int `json:"prompt_tokens"`
 	CompletionTokens int `json:"completion_tokens"`
