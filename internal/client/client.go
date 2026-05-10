@@ -15,6 +15,7 @@ import (
 type Client struct {
 	BaseURL    string
 	Model      string
+	MaxContext int
 	History    ClientHistory
 	HTTPClient *http.Client
 }
@@ -107,6 +108,21 @@ func (c *Client) UpdateSystemPrompt(systemPrompt string) error {
 	c.History.TotalTokens += tokens
 
 	return nil
+}
+
+func (c *Client) GetAvailableModels() ([]string, error) {
+	// /models endpoint to list all available models
+	// This will just return a list of strings with each model slug
+	// then make another function that changes the model
+	return nil, nil
+}
+
+func (c *Client) getContextLength() (int, error) {
+	// /props endpoint to fetch the n_ctx variable for max context and return it.
+	// will have to update NewClient() to set MaxContext
+	// /models/load and /models/unload let me control which models are currently running for the SwitchModel function.
+	// HOT OFF THE PRESS, /models RETURN THE n_ctx length, /props reportedly hung itself after the news.
+	return 0, nil
 }
 
 func (c *Client) SendChatRequest(prompt string) (string, error) {
