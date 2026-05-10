@@ -10,7 +10,15 @@ import (
 )
 
 func Repl(apiClient *client.Client) {
-	fmt.Print(apiClient.GetAvailableModels())
+	models, err := apiClient.GetAvailableModels()
+	if err != nil {
+		fmt.Printf("Error fetching models: %v\n", err)
+	} else {
+		fmt.Println("Available models:")
+		for model, ctx := range models {
+			fmt.Printf("  %s (context: %d)\n", model, ctx)
+		}
+	}
 	const prompt = "Enter input: "
 	var stream bool = true
 

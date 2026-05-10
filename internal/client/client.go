@@ -110,48 +110,54 @@ func (c *Client) UpdateSystemPrompt(systemPrompt string) error {
 	return nil
 }
 
-func (c *Client) GetAvailableModels() (Models, error) {
+func (c *Client) GetAvailableModels() (map[string]int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", c.BaseURL+"/models", nil)
 	if err != nil {
-		return Models{}, nil
+		return nil, err
 	}
+
+	req.Header.Set("Accept", "application/json")
 
 	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
-		return Models{}, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return Models{}, err
+		return nil, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return Models{}, fmt.Errorf("API error (%d): %s", resp.StatusCode, body)
+		return nil, fmt.Errorf("API error (%d): %s", resp.StatusCode, string(body))
 	}
 
-	modelsResp := Models{}
+	var modelsResp modelsResponse
 	if err := json.Unmarshal(body, &modelsResp); err != nil {
-		return Models{}, err
+		return nil, err
 	}
 
-	return modelsResp, nil
+	models := make(map[string]int, len(modelsResp.Data))
+	for _, entry := range modelsResp.Data {
+		models[entry.Id] = entry.Meta.NCTX
+	}
 
-	// /models endpoint to list all available models
-	// This will just return a list of strings with each model slug
-	// then make another function that changes the model
+	return models, nil
 }
 
-func (c *Client) getContextLength() (int, error) {
+func (c *Client) SwitchModels(model string, ctx int) error {
 	// /props endpoint to fetch the n_ctx variable for max context and return it.
 	// will have to update NewClient() to set MaxContext
 	// /models/load and /models/unload let me control which models are currently running for the SwitchModel function.
 	// HOT OFF THE PRESS, /models RETURN THE n_ctx length, /props reportedly hung itself after the news.
-	return 0, nil
+
+	c.Model = model
+	c.MaxContext = ctx
+	return nil
 }
 
 func (c *Client) SendChatRequest(prompt string) (string, error) {

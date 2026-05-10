@@ -54,13 +54,17 @@ type ChatCompletionStreamResponse struct {
 }
 
 // /models
-type Models struct {
-	Data []ModelData `json:"data"`
+type modelsResponse struct {
+	Data []modelEntry `json:"data"`
 }
 
-type ModelData struct {
-	Id  string `json:"id"`
-	CTX int    `json:"meta.n_ctx"`
+type modelEntry struct {
+	Id   string         `json:"id"`
+	Meta modelMetaEntry `json:"meta"`
+}
+
+type modelMetaEntry struct {
+	NCTX int `json:"n_ctx"`
 }
 
 // ClientHistory - internal conversation state (not an API type)
