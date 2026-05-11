@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -169,12 +170,31 @@ func (c *Client) SwitchModels(model string, ctx int) error {
 	// /models/load and /models/unload let me control which models are currently running for the SwitchModel function.
 	// HOT OFF THE PRESS, /models RETURN THE n_ctx length, /props reportedly hung itself after the news.
 
+	// update client struct
 	c.Model = model
 	c.MaxContext = ctx
+
+	// resest history cause bad token counting
+	err := c.ClearHistory()
+	if err != nil {
+		return err
+	}
+
+	// re tokenize the system prompt
+	if err := c.UpdateSystemPrompt(c.History.Messages[0].Content); err != nil {
+		return err
+	}
+
 	return nil
 }
 
+// Wipes history leaving only the system prompt
 func (c *Client) ClearHistory() error {
+	if len(c.History.Messages) == 0 {
+		return errors.New("Empty messages array while clearing history")
+	}
+	c.History.Messages = c.History.Messages[:1]
+	c.History.TotalTokens = c.History.Messages[0].Tokens
 	return nil
 }
 
