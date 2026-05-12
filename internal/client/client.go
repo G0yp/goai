@@ -29,16 +29,26 @@ func NewClient(baseURL string, model string, systemPrompt string) (*Client, erro
 	}
 
 	// handles blank model entry - probably better way to do this instead of the for loop
+	models, err := client.GetAvailableModels()
+	if err != nil {
+		return nil, err
+	}
 	if model == "" {
-		models, err := client.GetAvailableModels()
-		if err != nil {
-			return nil, err
-		}
 		for model, ctx := range models {
 			client.Model = model
 			client.MaxContext = ctx
 			break
 		}
+	} else {
+		ctx, ok := models[model]
+		if !ok {
+			available := make([]string, 0, len(models))
+			for m := range models {
+				available = append(available, m)
+			}
+			return nil, fmt.Errorf("Model %s not found in available models: %v", model, available)
+		}
+		client.MaxContext = ctx
 	}
 
 	tokens, err := client.tokenize(systemPrompt)
