@@ -65,7 +65,7 @@ func NewClient(baseURL string, model string, systemPrompt string) (*Client, erro
 }
 
 func (c *Client) trimHistory() {
-	const maxTokens = 4000
+	maxTokens := c.MaxContext
 	for c.History.TotalTokens > maxTokens && len(c.History.Messages) > 1 {
 		c.History.TotalTokens -= c.History.Messages[1].Tokens
 		c.History.Messages = append(c.History.Messages[:1], c.History.Messages[2:]...)
@@ -175,10 +175,7 @@ func (c *Client) GetAvailableModels() (map[string]int, error) {
 }
 
 func (c *Client) SwitchModels(model string, ctx int) error {
-	// /props endpoint to fetch the n_ctx variable for max context and return it.
-	// will have to update NewClient() to set MaxContext
 	// /models/load and /models/unload let me control which models are currently running for the SwitchModel function.
-	// HOT OFF THE PRESS, /models RETURN THE n_ctx length, /props reportedly hung itself after the news.
 
 	// update client struct
 	c.Model = model
